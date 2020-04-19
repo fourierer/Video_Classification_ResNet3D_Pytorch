@@ -169,7 +169,7 @@ python main.py --root_path /home/sunzheng/Video_Classification/data_hmdb --video
 
 ### 三、利用ResNet3D-50在Kinetics训练好的模型，进行打架行为识别数据集的微调
 
-1.环境配置和微调UCF-101数据集的时候是一致的
+1.环境配置和微调UCF-101以及HMDB-51数据集的时候是一致的
 
 
 
@@ -182,4 +182,279 @@ python main.py --root_path /home/sunzheng/Video_Classification/data_hmdb --video
 
 
 3.数据集预处理
+
+抽帧：将视频文件转换为图像文件，由于该数据集的视频文件是在各个公开数据集（包括Kinetics，UCF-101，HMDB-51等）中抽取的，所以视频格式包括.mkv，.mp4，.avi等。
+
+（1）.avi，.mkv，.mp4等视频文件转换为.jpg图像文件
+
+在抽帧过程中发现打架数据集中有很多.mkv(或者.mp4.webm格式)文件无法获取视频的总帧数，进而报错。解决方法：将非.avi格式转换为.avi格式，可以成功获取总帧数。
+
+转换命令：
+
+```shell
+ffmpeg test.mkv test.avi
+```
+
+获取视频信息代码get_video_infomation.py：
+
+```python
+import sys
+import random
+import os
+
+def get_video_info(in_file):
+    """
+    获取视频基本信息
+    """
+    try:
+        probe = ffmpeg.probe(in_file)
+        video_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
+        if video_stream is None:
+            print('No video stream found', file=sys.stderr)
+            sys.exit(1)
+        return video_stream
+    except ffmpeg.Error as err:
+        print(str(err.stderr, encoding='utf8'))
+        sys.exit(1)
+
+if __name__ == '__main__':
+    #file_path = '/home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020/videos/val/fight/angleview_p01p02_fight_a1.avi' #  获取某一视频文件的信息
+    #file_path = '/home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020/videos/val/fight/IMPfjjPQLnU.mkv'
+    file_path = '/home/sunzheng/test.avi'
+    video_info = get_video_info(file_path)
+    print(video_info)
+    total_frames = int(video_info['nb_frames'])
+    #total_duration = float(video_info['duration'])
+    print('总帧数：' + str(total_frames))
+    #print('总时长：' + str(total_duration))
+
+'''
+    file_path = '/home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020/videos/val/fight'
+    file_all = os.listdir(file_path)
+    for video in file_all:
+        video_path = file_path + '/' + video
+        print(video_path)
+        video_info = get_video_info(video_path)
+        print(video_info)
+        total_frames = int(video_info['nb_frames'])
+        print('总帧数：' + str(total_frames))
+'''
+```
+
+将视频格式转换之后，可以成功运行脚本来获取视频信息。
+
+所以下面的抽帧过程为：（1）先将数据集中所有的非.avi文件都转换为.avi格式change_style.py；（2）调用generate_video_jpgs_dj.py来抽帧。
+
+（1）change_style.py
+
+```python
+# 此脚本用于将视频目录下的所有非.mp4或者非.avi格式的视频转换为.avi格式的视频，用于抽帧
+
+import argparse
+import subprocess
+import tqdm
+import os
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--source_path', default=None, type=str, help='Directory path of original videos')
+    parser.add_argument(
+        '--dst_path', default=None, type=str, help='Directory path of .avi videos')
+    args = parser.parse_args()
+
+    file_all = os.listdir(args.source_path)
+    for video in tqdm.tqdm(file_all):
+        name = video.split('.')[0] #  获取视频名称
+        cmd = 'ffmpeg -i ' + args.source_path + video + ' ' + args.dst_path + name + '.avi' #  调用命令行执行转换格式的命令，命令为：ffmpeg -i /home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020/videos/train/fight/xxx.mp4 /home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020-avi/videos/train/fight/xxx.avi
+        subprocess.call(cmd, shell=True)
+```
+
+
+
+分别执行指令：
+
+训练集打架文件夹视频转换：
+
+```shell
+python change_style.py --source_path /home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020/videos/train/fight/ --dst_path /home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020-avi/videos/train/fight/
+```
+
+训练集非打架文件夹视频转换：
+
+```shell
+python change_style.py --source_path /home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020/videos/train/non-fight/ --dst_path /home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020-avi/videos/train/non-fight/
+```
+
+测试集打架文件夹视频转换：
+
+```shell
+python change_style.py --source_path /home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020/videos/val/fight/ --dst_path /home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020-avi/videos/val/fight/
+```
+
+测试集非打架文件夹视频转换：
+
+```shell
+python change_style.py --source_path /home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020/videos/val/non-fight/ --dst_path /home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020-avi/videos/val/non-fight/
+```
+
+
+
+（2）generate_video_jpgs_dj.py抽帧
+
+代码：
+
+```python
+# 此脚本用于对打架数据集进行抽帧
+
+import subprocess
+import argparse
+from pathlib import Path
+
+from joblib import Parallel, delayed
+
+
+def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
+    if ext != video_file_path.suffix: #  后缀不是avi，函数直接返回
+        return
+
+    ffprobe_cmd = ('ffprobe -v error -select_streams v:0 '
+                   '-of default=noprint_wrappers=1:nokey=1 -show_entries '
+                   'stream=width,height,avg_frame_rate,duration').split() #  增加一个参数获取视频的总帧数
+    ffprobe_cmd.append(str(video_file_path))
+    #print(ffprobe_cmd) #  所有包含视频文件的指令列表，如['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-of', 'default=noprint_wrappers=1:nokey=1', '-show_entries', 'stream=w
+idth,height,avg_frame_rate,duration', '/home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020/videos/val/non-fight/-0IErS_cisg.mp4']
+
+    p = subprocess.run(ffprobe_cmd, capture_output=True)
+    res = p.stdout.decode('utf-8').splitlines()
+    print(res) # 显示视频文件的基本信息，如['340', '256', '10/1', '12.000000'],分别是空间尺寸，帧率，时长
+    if len(res) < 4:
+        return
+
+    frame_rate = [float(r) for r in res[2].split('/')]
+    frame_rate = frame_rate[0] / frame_rate[1]
+    duration = float(res[3])
+    n_frames = int(frame_rate * duration)
+
+    name = video_file_path.stem
+    dst_dir_path = dst_root_path / name
+    dst_dir_path.mkdir(exist_ok=True)
+    n_exist_frames = len([
+        x for x in dst_dir_path.iterdir()
+        if x.suffix == '.jpg' and x.name[0] != '.'
+    ])
+    
+    if n_exist_frames >= n_frames:
+        return
+
+    width = int(res[0])
+    height = int(res[1])
+
+    if width > height:
+        vf_param = 'scale=-1:{}'.format(size)
+    else:
+        vf_param = 'scale={}:-1'.format(size)
+
+    if fps > 0:
+        vf_param += ',minterpolate={}'.format(fps)
+
+    ffmpeg_cmd = ['ffmpeg', '-i', str(video_file_path), '-vf', vf_param]
+    ffmpeg_cmd += ['-threads', '1', '{}/image_%05d.jpg'.format(dst_dir_path)]
+    #print(ffmpeg_cmd)
+    subprocess.run(ffmpeg_cmd)
+    #print('\n')
+
+
+def class_process(class_dir_path, dst_root_path, ext, fps=-1, size=240):
+    if not class_dir_path.is_dir():
+        return
+
+    #print(class_dir_path) #  视频文件类别路径，如/home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020/videos/train/fight
+    #print(class_dir_path.name) # 列出视频文件的所有类别名称，如fight,non-fight
+    dst_class_path = dst_root_path / class_dir_path.name
+    dst_class_path.mkdir(exist_ok=True) #  在图像文件所在目录里生成相应的类别文件夹
+    #print(dst_class_path) #  图像文件所在目录,如/home/sunzheng/Video_Classification/data_dj/dj_videos/jpg/train/fight
+
+    for video_file_path in sorted(class_dir_path.iterdir()):
+        #print(class_dir_path.iterdir())
+        #print(video_file_path) #  输出视频文件所在路径，如/home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020/videos/train/fight/UPaStKbekxc_000386_000396.mp4
+        video_process(video_file_path, dst_class_path, ext, fps, size)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'dir_path', default=None, type=Path, help='Directory path of videos')
+    parser.add_argument(
+        'dst_path',
+        default=None,
+        type=Path,
+        help='Directory path of jpg videos')
+    parser.add_argument(
+        'dataset',
+        default='',
+        type=str,
+        help='Dataset name (kinetics | mit | ucf101 | hmdb51 | activitynet | dj)') # 包括打架数据集
+    parser.add_argument(
+        '--n_jobs', default=-1, type=int, help='Number of parallel jobs')
+    parser.add_argument(
+        '--fps',
+        default=-1,
+        type=int,
+        help=('Frame rates of output videos. '
+              '-1 means original frame rates.'))
+    parser.add_argument(
+        '--size', default=240, type=int, help='Frame size of output videos.')
+    args = parser.parse_args()
+
+    if args.dataset in ['kinetics', 'mit', 'activitynet']:
+        ext = '.mp4'
+    else:
+        ext = '.avi'
+        
+    if args.dataset == 'activitynet':
+        video_file_paths = [x for x in sorted(args.dir_path.iterdir())]
+        status_list = Parallel(
+            n_jobs=args.n_jobs,
+            backend='threading')(delayed(video_process)(
+                video_file_path, args.dst_path, ext, args.fps, args.size)
+                                 for video_file_path in video_file_paths)
+    else:
+        class_dir_paths = [x for x in sorted(args.dir_path.iterdir())]
+        #print(class_dir_paths) #  输出各个视频类别的路径列表，比如[PosixPath('/home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020/videos/val/fight'), PosixPath('/home/su
+nzheng/Video_Classification/data_dj/Fight-dataset-2020/videos/val/non-fight')]
+        test_set_video_path = args.dir_path / 'test'
+        #print(test_set_video_path) # /home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020/videos/val/test，加了个test类别
+        if test_set_video_path.exists():
+            class_dir_paths.append(test_set_video_path)
+        #print(class_dir_paths) # 视频类别文件夹中没有test类别，输出和上面一样
+
+        status_list = Parallel(
+            n_jobs=args.n_jobs,
+            backend='threading')(delayed(class_process)(
+                class_dir_path, args.dst_path, ext, args.fps, args.size)
+                                 for class_dir_path in class_dir_paths) # class_dir_path是某一个类别的视频文件路径，如PosixPath('/home/sunzheng/Video_Classification/data_dj/Fight-da
+taset-2020/videos/val/fight')
+```
+
+
+
+执行指令：
+
+```shell
+python -m util_scripts.generate_video_jpgs_dj avi_video_dir_path jpg_video_dir_path dj
+```
+
+例如在我的服务器上为（由于打架数据集已经划分好了训练集和测试集，这里要对训练集和测试集分别进行抽帧）：
+
+训练集抽帧：
+
+```shell
+python -m util_scripts.generate_video_jpgs_dj /home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020-avi/videos/train/ /home/sunzheng/Video_Classification/data_dj/dj_videos/jpg/train/ dj
+```
+
+测试集抽帧：
+
+```shell
+python -m util_scripts.generate_video_jpgs_dj /home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020-avi/videos/val/ /home/sunzheng/Video_Classification/data_dj/dj_videos/jpg/val/ dj
+```
 
