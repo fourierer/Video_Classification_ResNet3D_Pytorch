@@ -62,7 +62,7 @@ python -m util_scripts.ucf101_json annotation_dir_path jpg_video_dir_path dst_js
 例如在我的服务器上为：
 
 ```shell
-python -m util_scripts.ucf101_json /home/sunzheng/Video_Classification/data/ucfTrainTestlist /home/sunzheng/Video_Classification/data/ucf101_videos/jpg/ /home/sunzheng/Video_Classification/data/
+python -m util_scripts.ucf101_json /home/sunzheng/Video_Classification/data/ucfTrainTestlist/ /home/sunzheng/Video_Classification/data/ucf101_videos/jpg/ /home/sunzheng/Video_Classification/data/
 ```
 
 
@@ -185,7 +185,7 @@ python main.py --root_path /home/sunzheng/Video_Classification/data_hmdb --video
 
 抽帧：将视频文件转换为图像文件，由于该数据集的视频文件是在各个公开数据集（包括Kinetics，UCF-101，HMDB-51等）中抽取的，所以视频格式包括.mkv，.mp4，.avi等。
 
-（1）.avi，.mkv，.mp4等视频文件转换为.jpg图像文件
+3.1.将.avi，.mkv，.mp4等视频文件转换为.jpg图像文件
 
 在抽帧过程中发现打架数据集中有很多.mkv(或者.mp4.webm格式)文件无法获取视频的总帧数，进而报错。解决方法：将非.avi格式转换为.avi格式，可以成功获取总帧数。
 
@@ -322,8 +322,7 @@ def video_process(video_file_path, dst_root_path, ext, fps=-1, size=240):
                    '-of default=noprint_wrappers=1:nokey=1 -show_entries '
                    'stream=width,height,avg_frame_rate,duration').split() #  增加一个参数获取视频的总帧数
     ffprobe_cmd.append(str(video_file_path))
-    #print(ffprobe_cmd) #  所有包含视频文件的指令列表，如['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-of', 'default=noprint_wrappers=1:nokey=1', '-show_entries', 'stream=w
-idth,height,avg_frame_rate,duration', '/home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020/videos/val/non-fight/-0IErS_cisg.mp4']
+    #print(ffprobe_cmd) #  所有包含视频文件的指令列表，如['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-of', 'default=noprint_wrappers=1:nokey=1', '-show_entries', 'stream=width,height,avg_frame_rate,duration', '/home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020/videos/val/non-fight/-0IErS_cisg.mp4']
 
     p = subprocess.run(ffprobe_cmd, capture_output=True)
     res = p.stdout.decode('utf-8').splitlines()
@@ -457,4 +456,114 @@ python -m util_scripts.generate_video_jpgs_dj /home/sunzheng/Video_Classificatio
 ```shell
 python -m util_scripts.generate_video_jpgs_dj /home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020-avi/videos/val/ /home/sunzheng/Video_Classification/data_dj/dj_videos/jpg/val/ dj
 ```
+
+
+
+3.2.利用.jpg文件生成数据集索引.json文件
+
+由于打架数据集已经划分好训练集和测试集，和UCF-101以及HMDB-51不一样，这里采用如下方法生成打架数据集的.json文件（生成.json文件的原因是要适应已有代码的数据读取方式）：
+
+（1）利用打架数据集中的数据，直接生成类似UCF-101数据集中的trainlist01.txt和testlist01.txt；
+
+（2）将划分好的打架数据集中的训练集和测试集放到一起（这一步也是为了和UCF-101数据集的形式保持一致）；
+
+（1）利用打架数据集的数据直接生成打架数据集的划分文档trainlist01.txt和testlist01.txt
+
+make_index.py:
+
+```python
+import argparse
+import tqdm
+import os
+
+def make_index_txt(class_path, txt_path, train):
+    cate = os.listdir(class_path) # ['fight', 'non-fight']
+    if train == 1:
+        i = 0 # trainlist01.txt类别数
+        with open(txt_path, 'w') as f:
+            for is_fight in cate:
+                i = i+1
+                video_list = os.listdir(class_path + is_fight)
+                for video in video_list:
+                    f.write(is_fight + '/' + video + ' ' + str(i) + '\n')
+    elif train == 0:
+        with open(txt_path, 'w') as f:
+            for is_fight in cate:
+                video_list = os.listdir(class_path + is_fight)
+                for video in video_list:
+                    f.write(is_fight + '/' + video + '\n')
+
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--is_train', default=None, type=int, help='make train(or test)list01.txt')
+    parser.add_argument('--dst_path', default='/home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020-avi/', type=str, help='path to generate txt file')
+    args = parser.parse_args()
+
+    if args.is_train == 1:
+        class_path = '/home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020-avi/videos/train/'
+        txt_path = args.dst_path + 'trainlist01.txt'
+    elif args.is_train == 0:
+        class_path = '/home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020-avi/videos/val/'
+        txt_path = args.dst_path + 'testlist01.txt'
+    make_index_txt(class_path, txt_path, args.is_train)
+```
+
+分别运行下面两个命令来生成trainlist01.txt和testlist01.txt
+
+```shell
+python make_index.py --is_train 1 # 生成trainlist01.txt
+```
+
+```shell
+python make_index.py --is_train 0 # 生成testlist01.txt
+```
+
+再将这两个划分文件分为复制为：trainlist02.txt和testlist02.txt，trainlist03.txt和testlist03.txt，为了生成ucf101_01.json，ucf101_02.json，ucf101_03.json。实际上后续训练的时候只需要一个即可。
+
+
+
+（2）将打架数据集中的训练集和测试集放到一起
+
+这里选择将jpg文件夹中抽好帧的图像，重新复制一份到jpg_mix文件夹中，在该文件夹中将fight和non-fight类别的训练集和测试集放到一起。
+
+
+
+以上都完成之后，采用UCF-101生成.json的脚本命令来生成打架数据集的.json文件：
+
+```shell
+python -m util_scripts.ucf101_json annotation_dir_path jpg_video_dir_path dst_json_path
+```
+
+例如在我的服务器上为：
+
+```shell
+python -m util_scripts.ucf101_json /home/sunzheng/Video_Classification/data_dj/Fight-dataset-2020-avi /home/sunzheng/Video_Classification/data_dj/dj_videos/jpg_mix/ /home/sunzheng/Video_Classification/data_dj/
+```
+
+生成ucf101_01.json，ucf101_02.json，ucf101_03.json。
+
+
+
+4.使用Kinetics上预训练的模型进行微调训练HMDB-51
+
+```shell
+python main.py --root_path ~/data --video_path hmdb51_videos/jpg --annotation_path hmdb51_1.json \
+--result_path results --dataset hmdb51 --n_classes 101 --n_pretrain_classes 700 \
+--pretrain_path models/r3d50_K_200ep.pth --ft_begin_module fc \
+--model resnet --model_depth 50 --batch_size 128 --n_threads 4 --checkpoint 5
+```
+
+例如在我的服务器上为：
+
+```shell
+python main.py --root_path /home/sunzheng/Video_Classification/data_dj/ --video_path dj_videos/jpg_mix --annotation_path ucf101_01.json
+--result_path results --dataset ucf101 --n_classes 2 --n_pretrain_classes 700
+--pretrain_path models/r3d50_K_200ep.pth --ft_begin_module fc
+--model resnet --model_depth 50 --batch_size 32 --n_threads 4 --checkpoint 5
+```
+
+成功训练！
 
