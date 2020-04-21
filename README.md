@@ -547,12 +547,12 @@ python -m util_scripts.ucf101_json /home/sunzheng/Video_Classification/data_dj/F
 
 
 
-4.使用Kinetics上预训练的模型进行微调训练HMDB-51
+4.使用Kinetics上预训练的模型进行微调训练打架数据集（和微调UCF-101时的指令保持一致）
 
 ```shell
-python main.py --root_path ~/data --video_path hmdb51_videos/jpg --annotation_path hmdb51_1.json \
---result_path results --dataset hmdb51 --n_classes 101 --n_pretrain_classes 700 \
---pretrain_path models/r3d50_K_200ep.pth --ft_begin_module fc \
+python main.py --root_path ~/data --video_path ucf101_videos/jpg --annotation_path ucf101_01.json \
+--result_path results --dataset ucf101 --n_classes 101 --n_pretrain_classes 700 \
+--pretrain_path models/resnet-50-kinetics.pth --ft_begin_module fc \
 --model resnet --model_depth 50 --batch_size 128 --n_threads 4 --checkpoint 5
 ```
 
