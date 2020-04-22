@@ -565,5 +565,4 @@ python main.py --root_path /home/sunzheng/Video_Classification/data_dj/ --video_
 --model resnet --model_depth 50 --batch_size 32 --n_threads 4 --checkpoint 5
 ```
 
-成功训练！
-
+训练200个epoch，batch_size为32，其余参数和代码中默认一致。结果为：训练集平均精度：89.76%，测试集平均精度：79.48%
