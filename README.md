@@ -266,6 +266,8 @@ python -m util_scripts.eval_accuracy /home/sunzheng/Video_Classification/data_hm
 
 ### 三、利用ResNet3D-50在Kinetics训练好的模型，进行打架行为识别数据集的微调
 
+**这部分相比于前两部分，代码解读会较多**
+
 1.环境配置和微调UCF-101以及HMDB-51数据集的时候是一致的
 
 
@@ -642,6 +644,14 @@ python -m util_scripts.ucf101_json /home/sunzheng/Video_Classification/data_dj/F
 
 生成ucf101_01.json，ucf101_02.json，ucf101_03.json。
 
+.json文件的内容如下：
+
+```python
+......"vpCp4Jqd3R0": {"subset": "validation", "annotations": {"label": "non-fight", "segment": [1, 158]}}......
+```
+
+包含了所有的视频名称，测试集还是训练集，标签以及帧数。
+
 
 
 4.使用Kinetics上预训练的模型进行微调训练打架数据集（和微调UCF-101时的指令保持一致）
@@ -684,6 +694,14 @@ python main.py --root_path /home/sunzheng/Video_Classification/data_dj --video_p
 --model_depth 50 --n_classes 2 --n_threads 4 --no_train --no_val --inference --output_topk 5 --inference_batch_size 1
 ```
 
+这一步是在生成results/val.json文件，val.json文件内容如下：
+
+```python
+......"v_YoYo_g07_c03": [{"label": "PlayingFlute", "score": 0.3044358193874359}, {"label": "WallPushups", "score": 0.08625337481498718}, {"label": "PlayingPiano", "score": 0.07247895002365112}, {"label": "JugglingBalls", "score": 0.07046709209680557}, {"label": "Haircut", "score": 0.05863256752490997}]......
+```
+
+文件中是测试集中各个视频的名称以及前五项类别的概率。
+
 
 
 再运行：（Evaluate top-1 video accuracy of a recognition result(~/data/results/val.json).）
@@ -708,4 +726,121 @@ number of result: 304
 calculate top-1 accuracy
 top-1 accuracy: 0.8223684210526315
 ```
+
+
+
+### 四、利用ResNet3D-50及ip-CSN-50（ir-CSN-50）从头训练UCF-101 
+
+环境配置、数据预处理以及生成数据索引步骤与微调UCF-101部分一样，直接训练UCF-101即可。
+
+1.使用ResNet-3D-50训练
+
+（1）训练命令
+
+```shell
+python main.py --root_path ~/data --video_path ucf101_videos/jpg --annotation_path ucf101_01.json \
+--result_path results --dataset ucf101 --model resnet \
+--model_depth 50 --n_classes 700 --batch_size 128 --n_threads 4 --checkpoint 5
+```
+
+例如在我的服务器上为：
+
+```shell
+python main.py --root_path /home/sunzheng/Video_Classification/data --video_path ucf101_videos/jpg --annotation_path ucf101_01.json \
+--result_path results --dataset ucf101 --model resnet \
+--model_depth 50 --n_classes 101 --batch_size 128 --n_threads 4 --checkpoint 5
+```
+
+
+
+（2）评测训练好的模型(和使用KInetics训练好的模型微调UCF一样的评测方法)
+
+先运行：
+
+```shell
+python main.py --root_path ~/data --video_path kinetics_videos/jpg --annotation_path kinetics.json \
+--result_path results --dataset kinetics --resume_path results/save_200.pth \
+--model_depth 50 --n_classes 700 --n_threads 4 --no_train --no_val --inference --output_topk 5 --inference_batch_size 1
+```
+
+例如在我的服务器上为：
+
+```shell
+python main.py --root_path /home/sunzheng/Video_Classification/data --video_path ucf101_videos/jpg --annotation_path ucf101_01.json \
+--result_path results --dataset ucf101 --resume_path results/save_200.pth \
+--model_depth 50 --n_classes 101 --n_threads 4 --no_train --no_val --inference --output_topk 5 --inference_batch_size 1
+```
+
+
+
+再运行：（Evaluate top-1 video accuracy of a recognition result(~/data/results/val.json).）
+
+```shell
+python -m util_scripts.eval_accuracy ~/data/kinetics.json ~/data/results/val.json --subset val -k 1 --ignore
+```
+
+例如在我的服务器上为：
+
+```shell
+python -m util_scripts.eval_accuracy /home/sunzheng/Video_Classification/data/ucf101_01.json /home/sunzheng/Video_Classification/data/results/val.json -k 1 --ignore
+```
+
+k代表top-k的准确率，输出top-1，top-3，top-5结果：
+
+```python
+load ground truth
+number of ground truth: 3783
+load result
+number of result: 3783
+calculate top-1 accuracy
+top-1 accuracy: 0.46418186624372193
+```
+
+```python
+load ground truth
+number of ground truth: 3783
+load result
+number of result: 3783
+calculate top-3 accuracy
+top-3 accuracy: 0.6330954269098599
+```
+
+```python
+load ground truth
+number of ground truth: 3783
+load result
+number of result: 3783
+calculate top-5 accuracy
+top-5 accuracy: 0.7079037800687286
+```
+
+可以看出ResNet3D在UCF-101从头开始训练，测试集中的top-1只有46.4%，但是训练集达到95%以上，严重过拟合。
+
+
+
+2.使用ip-CSN-50训练
+
+（1）训练命令
+
+```shell
+python main.py --root_path ~/data --video_path kinetics_videos/jpg --annotation_path kinetics.json \
+--result_path results --dataset kinetics --model resnet \
+--model_depth 50 --n_classes 700 --batch_size 128 --n_threads 4 --checkpoint 5
+```
+
+
+
+
+
+
+
+
+
+### 五、利用ResNet3D-50及ip-CSN-50（ir-CSN-50）从头训练Kinetics 
+
+
+
+
+
+
 
