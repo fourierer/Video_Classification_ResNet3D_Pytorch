@@ -838,7 +838,11 @@ python main.py --root_path ~/data --video_path kinetics_videos/jpg --annotation_
 
 ### 五、利用ResNet3D-50及ip-CSN-50（ir-CSN-50）从头训练Kinetics 
 
+1.下载Kinetics数据集（需翻墙）：https://www.dropbox.com/s/wcs01mlqdgtq4gn/compress.tar.gz?dl=1 ，数据集是压缩包共131G，包括训练集的验证集。
 
+
+
+2.数据预处理
 
 
 
