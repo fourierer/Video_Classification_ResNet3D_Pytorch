@@ -694,6 +694,12 @@ python main.py --root_path /home/sunzheng/Video_Classification/data_dj --video_p
 --model_depth 50 --n_classes 2 --n_threads 4 --no_train --no_val --inference --output_topk 5 --inference_batch_size 1
 ```
 
+运行之后，opt的参数如下：
+
+![opt_val](/Users/momo/Documents/Video_Classification_ResNet3D_Pytorch/opt_val.png)
+
+
+
 这一步是在生成results/val.json文件，val.json文件内容如下：
 
 ```python
@@ -729,7 +735,41 @@ top-1 accuracy: 0.8223684210526315
 
 
 
-测评代码解读：（包括如何去调用模型识别单个视频是否为打架视频）
 
 
+6.调用模型识别单个视频是否为打架视频
+
+这一步和5中不一样，5中是调用了模型去测试所有的测试集数据，有时候需要调用模型去识别单个视频，如展示模型的性能的时候，和repo （https://github.com/fourierer/Learn_GhostNet_pytorch） 中一样，重点部分在于预处理部分。
+
+main.py脚本主要包括如下函数：
+
+（1）get_opt()函数，获得opt；
+
+（2）get_normalize_method()函数，正则化方法；
+
+（3）get_train_utils()函数，预处理以及加载训练集数据；
+
+（4）get_val_utils()函数，预处理以及加载验证集数据；
+
+（5）get_inference_utils()函数，5中评测模型涉及到的函数，只不过是测了验证集中所有的视频，需要使用这个函数来测试单个视频；
+
+（3）-（5）中的函数非常类似，实际上是将数据的预处理和加载分为了两个阶段：
+
+1）预处理阶段：get_xxx_data（如get_train_data,get_val_data,get_inference_data）将数据预处理，类似于图像分类中的ImageFolder函数。很明显这个函数是作者自己写的为了特定的视频数据读取，而不是直接使用ImageFolder函数；
+
+2）加载阶段：使用torch.utils.data.DataLoader将数据按照batch_size打包；
+
+（6）save_checkpoint()函数，存储模型为tar包；
+
+（7）main_worker()函数，训练代码。这个训练代码和图像分类训练代码非常类似：
+
+1）先设置分布式训练方式，如单机多卡，多机多卡；
+
+2）数据加载，加载训练集数据和验证集数据；
+
+3）使用加载的训练集，验证集数据进行训练；
+
+4）如果是5中的模型评测，则不需要步骤3）,4），直接加载推理（inference）数据集进行评测；
+
+下面给出调用模型来识别单个视频的脚本（利用main.py函数中的inference部分的代码）：
 
