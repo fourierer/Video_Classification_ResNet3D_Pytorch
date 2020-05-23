@@ -771,7 +771,7 @@ main.py脚本主要包括如下函数：
 
 4）如果是5中的模型评测，则不需要步骤3）,4），直接加载推理（inference）数据集进行评测；
 
-下面给出调用模型来识别单个视频的脚本（利用main.py函数中的inference部分的代码）：
+下面给出调用模型来识别单个视频的脚本(eval_pytorch_model_video.py)（利用main.py函数中的inference部分的代码）：
 
 ```python
 import torch
@@ -806,6 +806,7 @@ def get_normalize_method(mean, std, no_mean_norm, no_std_norm):
             return Normalize(mean, [1, 1, 1])
         else:
             return Normalize(mean, std)
+
 
 # 数据预处理
 
@@ -848,8 +849,10 @@ if sample_t_stride > 1:
 temporal_transform.append(SlidingWindow(sample_duration, inference_stride))
 temporal_transform = TemporalCompose(temporal_transform)
 
+
+
 # 加载模型
-print('load model begin!')
+#print('load model begin!')
 model = generate_model_resnet(1) # 生成resnet模型
 #model = torch.load('./save_200.pth')
 checkpoint = torch.load('./save_200.pth', map_location='cpu')
@@ -857,18 +860,16 @@ model.load_state_dict(checkpoint['state_dict'])
 #print(model)
 model.eval()  # 固定batchnorm，dropout等，一定要有
 model= model.to(device)
-print('load model done!')
+#print('load model done!')
 
-'''
+
 count = 0
 # 测试单个视频
 # fight
-#img_path = './fight/ZRCg4Y8MMgg/'
-#img_path = './fight/z_oa_Kaf-fY_000210_000220/'
-#img_path = './fight/Zo9b3niRbHk_000002_000012/'
-#img_path = './fight/zNLcUinqRfc_000127_000137/'
-#img_path = './fight/yxG9LiGMtRU/'
-#img_path = './fight/Z0nfPTEEOLo/'
+#img_path = './fight/angleview_p08p09_fight_a1/'
+#img_path = './fight/EuRuxPSjgn8/'
+#img_path = './fight/WGxSNBg_tl0/'
+img_path = './fight/IQHsCcud-zE/'
 
 # non-fight
 #img_path = './non-fight/zzMeCV_eK3c_000002_000012/'
@@ -876,7 +877,8 @@ count = 0
 #img_path = './non-fight/Zp-S9G02idU_000029_000039/'
 #img_path = './non-fight/ZpbuVxloNpQ_000011_000021/'
 #img_path = './non-fight/zFFfWSpwlok/'
-img_path = './non-fight/ZcI5Ht9e4QU/'
+#img_path = './non-fight/ZcI5Ht9e4QU/'
+
 
 for img_name in os.listdir(img_path):
     count += 1
@@ -895,28 +897,30 @@ for img_name in os.listdir(img_path):
 
 #video = torch.Tensor(1, 3, 224, 224, 30) #如果只是测试时间，直接初始化一个Tensor即可
 #video = temporal_transform(video)
-print(type(video))
+#print(type(video))
 video = video.permute(0, 1, 4, 2, 3)
-print(video.shape)
+#print(video.shape)
 
 
 time_start = time.time()
-#video_= video.to(device)
-outputs = model(video)
+video_ = video.to(device)
+outputs = model(video_)
 time_end = time.time()
 time_c = time_end - time_start
 _, predicted = torch.max(outputs,1)
 threshold = math.exp(outputs[0][0])/(math.exp(outputs[0][0]) + math.exp(outputs[0][1]))
-print('model output:' + str(outputs))
-print('this video maybe:' + str(predicted))
+#print('model output:' + str(outputs))
+if predicted==torch.tensor([0], device='cuda:0'):
+    print('this video maybe: fight')
+else:
+    print('this video maybe: non-fight')
 print('prob of fight:' + str(threshold))
 print('time cost:', time_c, 's')
 '''
-
 # 批量测试数据集中的样本
 N = 0 # 当前视频索引
 acc_N = 0 # 分类正确的视频数
-video_path = '/home/sunzheng/Video_Classification/data_dj/dj_videos/jpg/val/non-fight/'
+video_path = '/home/sunzheng/Video_Classification/data_dj/dj_videos/jpg/val/fight/'
 for videos in os.listdir(video_path):
     #print(video)
     N += 1
@@ -962,5 +966,6 @@ for videos in os.listdir(video_path):
     print('time cost:', time_c, 's')
 print('acc_N:' + str(acc_N))
 print('total acc:' + str(acc_N/N))
+'''
 ```
 
