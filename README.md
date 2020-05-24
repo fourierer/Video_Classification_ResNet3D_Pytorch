@@ -3,7 +3,7 @@ Using ResNet3D to train on Kinetics form scratch or fine-tune on UCF-101(or othe
 
 
 
-此repo中前两部分的使用Kinetics上训练好的模型来微调UCF-101和HMDB-51的代码和模型来源于（https://github.com/kenshohara/3D-ResNets-PyTorch） ，没有原创性；第三部分打架行为识别部分的前面数据预处理是根据打架数据集写的，后续的训练代码是ResNet3D中的。
+此repo中前两部分的使用Kinetics上训练好的模型来微调UCF-101和HMDB-51的代码和模型来源于（https://github.com/kenshohara/3D-ResNets-PyTorch ） ，没有原创性；第三部分打架行为识别部分的前面数据预处理是根据打架数据集写的，后续的训练代码是ResNet3D中的。
 
 
 
@@ -84,12 +84,6 @@ python main.py --root_path /home/sunzheng/Video_Classification/data --video_path
 --pretrain_path models/r3d50_K_200ep.pth --ft_begin_module fc
 --model resnet --model_depth 50 --batch_size 128 --n_threads 4 --checkpoint 5
 ```
-
-
-
-成功训练200个epoch，最后结果如下：
-
-![result_ucf](/Users/momo/Documents/Video_Classification_ResNet3D_Pytorch/result_ucf.png)
 
 
 
@@ -202,7 +196,7 @@ python -m util_scripts.hmdb51_json /home/sunzheng/Video_Classification/data_hmdb
 
 ```shell
 python main.py --root_path ~/data --video_path hmdb51_videos/jpg --annotation_path hmdb51_1.json \
---result_path results --dataset hmdb51 --n_classes 101 --n_pretrain_classes 700 \
+--result_path results --dataset hmdb51 --n_classes 51 --n_pretrain_classes 700 \
 --pretrain_path models/r3d50_K_200ep.pth --ft_begin_module fc \
 --model resnet --model_depth 50 --batch_size 128 --n_threads 4 --checkpoint 5
 ```
@@ -211,20 +205,14 @@ python main.py --root_path ~/data --video_path hmdb51_videos/jpg --annotation_pa
 
 ```shell
 python main.py --root_path /home/sunzheng/Video_Classification/data_hmdb --video_path hmdb51_videos/jpg --annotation_path hmdb51_1.json
---result_path results --dataset hmdb51 --n_classes 101 --n_pretrain_classes 700
+--result_path results --dataset hmdb51 --n_classes 51 --n_pretrain_classes 700
 --pretrain_path models/r3d50_K_200ep.pth --ft_begin_module fc
---model resnet --model_depth 50 --batch_size 128 --n_threads 4 --checkpoint 5
+--model resnet --model_depth 50 --batch_size 32 --n_threads 4 --checkpoint 5
 ```
 
 
 
-成功训练，训练200个epoch：
-
-![result_hmdb](/Users/momo/Documents/Video_Classification_ResNet3D_Pytorch/result_hmdb.png)
-
-
-
-5.评测训练好的模型
+4.评测训练好的模型
 
 先运行：
 
@@ -256,9 +244,34 @@ python -m util_scripts.eval_accuracy ~/data/kinetics.json ~/data/results/val.jso
 python -m util_scripts.eval_accuracy /home/sunzheng/Video_Classification/data_hmdb/hmdb51_1.json /home/sunzheng/Video_Classification/data/results/val.json -k 1 --ignore
 ```
 
+k代表top-k的准确率，输出top-1，top-3，top-5结果：
 
+```python
+load ground truth
+number of ground truth: 3783
+load result
+number of result: 3783
+calculate top-1 accuracy
+top-1 accuracy: 0.8977002379064235
+```
 
+```python
+load ground truth
+number of ground truth: 3783
+load result
+number of result: 3783
+calculate top-3 accuracy
+top-3 accuracy: 0.9777954004758128
+```
 
+```python
+load ground truth
+number of ground truth: 3783
+load result
+number of result: 3783
+calculate top-5 accuracy
+top-5 accuracy: 0.9875759978852763
+```
 
 
 
