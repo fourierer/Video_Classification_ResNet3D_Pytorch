@@ -241,36 +241,36 @@ python -m util_scripts.eval_accuracy ~/data/kinetics.json ~/data/results/val.jso
 例如在我的服务器上为：
 
 ```shell
-python -m util_scripts.eval_accuracy /home/sunzheng/Video_Classification/data_hmdb/hmdb51_1.json /home/sunzheng/Video_Classification/data/results/val.json -k 1 --ignore
+python -m util_scripts.eval_accuracy /home/sunzheng/Video_Classification/data_hmdb/hmdb51_1.json /home/sunzheng/Video_Classification/data_hmdb/results/val.json -k 1 --ignore
 ```
 
 k代表top-k的准确率，输出top-1，top-3，top-5结果：
 
 ```python
 load ground truth
-number of ground truth: 3783
+number of ground truth: 1530
 load result
-number of result: 3783
+number of result: 1530
 calculate top-1 accuracy
-top-1 accuracy: 0.8977002379064235
+top-1 accuracy: 0.5784313725490197
 ```
 
 ```python
 load ground truth
-number of ground truth: 3783
+number of ground truth: 1530
 load result
-number of result: 3783
+number of result: 1530
 calculate top-3 accuracy
-top-3 accuracy: 0.9777954004758128
+top-3 accuracy: 0.7803921568627451
 ```
 
 ```python
 load ground truth
-number of ground truth: 3783
+number of ground truth: 1530
 load result
-number of result: 3783
+number of result: 1530
 calculate top-5 accuracy
-top-5 accuracy: 0.9875759978852763
+top-5 accuracy: 0.8581699346405228
 ```
 
 
