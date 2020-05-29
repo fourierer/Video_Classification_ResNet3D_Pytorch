@@ -9,7 +9,7 @@ Using ResNet3D to train on Kinetics form scratch or fine-tune on UCF-101(or othe
 
 
 
-### 一、利用ResNet3D-50在Kinetics训练好的模型，进行UCF-101的微调
+### 一、利用ResNet3D-50以及R(2+1)D-50在Kinetics训练好的模型，进行UCF-101的微调
 
 1.环境配置
 
@@ -67,7 +67,9 @@ python -m util_scripts.ucf101_json /home/sunzheng/Video_Classification/data/ucfT
 
 
 
-4.使用Kinetics上预训练的模型进行微调训练UCF-101
+4.使用ResNet3D在Kinetics上预训练的模型进行微调训练UCF-101
+
+（1）微调训练模型
 
 ```shell
 python main.py --root_path ~/data --video_path ucf101_videos/jpg --annotation_path ucf101_01.json \
@@ -87,7 +89,7 @@ python main.py --root_path /home/sunzheng/Video_Classification/data --video_path
 
 
 
-5.评测训练好的模型
+（2）评测训练好的模型
 
 先运行：
 
@@ -150,9 +152,79 @@ top-5 accuracy: 0.9875759978852763
 
 
 
+5.使用R(2+1)D在Kinetics上预训练的模型进行微调训练UCF-101
+
+（1）微调训练模型
+
+```shell
+python main.py --root_path ~/data --video_path ucf101_videos/jpg --annotation_path ucf101_01.json \
+--result_path results --dataset ucf101 --n_classes 101 --n_pretrain_classes 700 \
+--pretrain_path models/resnet-50-kinetics.pth --ft_begin_module fc \
+--model resnet --model_depth 50 --batch_size 128 --n_threads 4 --checkpoint 5
+```
+
+例如在我的服务器上为：
+
+```shell
+python main.py --root_path /home/sunzheng/Video_Classification/data --video_path ucf101_videos/jpg --annotation_path ucf101_01.json \
+--result_path results_finetune_r2p1d --dataset ucf101 --n_classes 101 --n_pretrain_classes 700 \
+--pretrain_path models/r2p1d50_K_200ep.pth --ft_begin_module fc \
+--model resnet2p1d --model_depth 50 --batch_size 32 --n_threads 4 --checkpoint 5
+```
 
 
-### 二、利用ResNet3D-50在Kinetics训练好的模型，进行HMDB-51数据集的微调
+
+（2）评测训练好的模型
+
+先运行：
+
+```shell
+python main.py --root_path ~/data --video_path kinetics_videos/jpg --annotation_path kinetics.json \
+--result_path results --dataset kinetics --resume_path results/save_200.pth \
+--model_depth 50 --n_classes 700 --n_threads 4 --no_train --no_val --inference --output_topk 5 --inference_batch_size 1
+```
+
+例如在我的服务器上为：
+
+```shell
+python main.py --root_path /home/sunzheng/Video_Classification/data --video_path ucf101_videos/jpg --annotation_path ucf101_01.json \
+--result_path results_finetune_r2p1d --dataset ucf101 --resume_path results_finetune_r2p1d/save_200.pth \
+--model_depth 50 --n_classes 101 --n_threads 4 --no_train --no_val --inference --output_topk 5 --inference_batch_size 1
+```
+
+
+
+再运行：（Evaluate top-1 video accuracy of a recognition result(~/data/results/val.json).）
+
+```shell
+python -m util_scripts.eval_accuracy ~/data/kinetics.json ~/data/results/val.json --subset val -k 1 --ignore
+```
+
+例如在我的服务器上为：
+
+```shell
+python -m util_scripts.eval_accuracy /home/sunzheng/Video_Classification/data/ucf101_01.json /home/sunzheng/Video_Classification/data/results_finetune_r2p1d/val.json -k 1 --ignore
+```
+
+k代表top-k的准确率，输出top-1，top-3，top-5结果：
+
+```python
+
+```
+
+```python
+
+```
+
+```python
+
+```
+
+
+
+
+
+### 二、利用ResNet3D-50以及R(2+1)D-50在Kinetics训练好的模型，进行HMDB-51数据集的微调
 
 1.数据集和训练好的模型下载：
 
@@ -192,7 +264,9 @@ python -m util_scripts.hmdb51_json /home/sunzheng/Video_Classification/data_hmdb
 
 
 
-3.使用Kinetics上预训练的模型进行微调训练HMDB-51
+3.使用ResNet3D在Kinetics上预训练的模型进行微调训练HMDB-51
+
+（1）微调训练
 
 ```shell
 python main.py --root_path ~/data --video_path hmdb51_videos/jpg --annotation_path hmdb51_1.json \
@@ -212,7 +286,7 @@ python main.py --root_path /home/sunzheng/Video_Classification/data_hmdb --video
 
 
 
-4.评测训练好的模型
+（2）评测训练好的模型
 
 先运行：
 
@@ -271,6 +345,76 @@ load result
 number of result: 1530
 calculate top-5 accuracy
 top-5 accuracy: 0.8581699346405228
+```
+
+
+
+3.使用ResNet3D在Kinetics上预训练的模型进行微调训练HMDB-51
+
+（1）微调训练
+
+```shell
+python main.py --root_path ~/data --video_path hmdb51_videos/jpg --annotation_path hmdb51_1.json \
+--result_path results --dataset hmdb51 --n_classes 51 --n_pretrain_classes 700 \
+--pretrain_path models/r3d50_K_200ep.pth --ft_begin_module fc \
+--model resnet --model_depth 50 --batch_size 128 --n_threads 4 --checkpoint 5
+```
+
+例如在我的服务器上为：
+
+```shell
+python main.py --root_path /home/sunzheng/Video_Classification/data_hmdb --video_path hmdb51_videos/jpg --annotation_path hmdb51_1.json
+--result_path results_finetune_r2p1d --dataset hmdb51 --n_classes 51 --n_pretrain_classes 700
+--pretrain_path models/r2p1d50_K_200ep.pth --ft_begin_module fc
+--model resnet --model_depth 50 --batch_size 32 --n_threads 4 --checkpoint 5
+```
+
+
+
+（2）评测训练好的模型
+
+先运行：
+
+```shell
+python main.py --root_path ~/data --video_path kinetics_videos/jpg --annotation_path kinetics.json \
+--result_path results --dataset kinetics --resume_path results/save_200.pth \
+--model_depth 50 --n_classes 700 --n_threads 4 --no_train --no_val --inference --output_topk 5 --inference_batch_size 1
+```
+
+例如在我的服务器上为：
+
+```shell
+python main.py --root_path /home/sunzheng/Video_Classification/data_hmdb --video_path hmdb51_videos/jpg --annotation_path hmdb51_1.json \
+--result_path results_finetune_r2p1d --dataset hmdb51 --resume_path results_finetune_r2p1d/save_200.pth \
+--model_depth 50 --n_classes 51 --n_threads 4 --no_train --no_val --inference --output_topk 5 --inference_batch_size 1
+```
+
+
+
+再运行：（Evaluate top-1 video accuracy of a recognition result(~/data/results/val.json).）
+
+```shell
+python -m util_scripts.eval_accuracy ~/data/kinetics.json ~/data/results/val.json --subset val -k 1 --ignore
+```
+
+例如在我的服务器上为：
+
+```shell
+python -m util_scripts.eval_accuracy /home/sunzheng/Video_Classification/data_hmdb/hmdb51_1.json /home/sunzheng/Video_Classification/data_hmdb/results_finetune_r2p1d/val.json -k 1 --ignore
+```
+
+k代表top-k的准确率，输出top-1，top-3，top-5结果：
+
+```python
+
+```
+
+```python
+
+```
+
+```python
+
 ```
 
 
