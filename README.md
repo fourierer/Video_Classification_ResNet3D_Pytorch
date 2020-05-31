@@ -189,7 +189,7 @@ python main.py --root_path ~/data --video_path kinetics_videos/jpg --annotation_
 ```shell
 python main.py --root_path /home/sunzheng/Video_Classification/data --video_path ucf101_videos/jpg --annotation_path ucf101_01.json \
 --result_path results_finetune_r2p1d --dataset ucf101 --resume_path results_finetune_r2p1d/save_200.pth \
---model_depth 50 --n_classes 101 --n_threads 4 --no_train --no_val --inference --output_topk 5 --inference_batch_size 1
+--model_depth 50 --n_classes 101 --n_threads 4 --no_train --no_val --inference --output_topk 5 --inference_batch_size 1 --model resnet2p1d
 ```
 
 
@@ -209,15 +209,30 @@ python -m util_scripts.eval_accuracy /home/sunzheng/Video_Classification/data/uc
 k代表top-k的准确率，输出top-1，top-3，top-5结果：
 
 ```python
-
+load ground truth
+number of ground truth: 3783
+load result
+number of result: 3783
+calculate top-1 accuracy
+top-1 accuracy: 0.9217552207242928
 ```
 
 ```python
-
+load ground truth
+number of ground truth: 3783
+load result
+number of result: 3783
+calculate top-3 accuracy
+top-3 accuracy: 0.9867829764736982
 ```
 
 ```python
-
+load ground truth
+number of ground truth: 3783
+load result
+number of result: 3783
+calculate top-5 accuracy
+top-5 accuracy: 0.9936558287073751
 ```
 
 
@@ -349,7 +364,7 @@ top-5 accuracy: 0.8581699346405228
 
 
 
-3.使用ResNet3D在Kinetics上预训练的模型进行微调训练HMDB-51
+4.使用R(2+1)D在Kinetics上预训练的模型进行微调训练HMDB-51
 
 （1）微调训练
 
@@ -357,7 +372,7 @@ top-5 accuracy: 0.8581699346405228
 python main.py --root_path ~/data --video_path hmdb51_videos/jpg --annotation_path hmdb51_1.json \
 --result_path results --dataset hmdb51 --n_classes 51 --n_pretrain_classes 700 \
 --pretrain_path models/r3d50_K_200ep.pth --ft_begin_module fc \
---model resnet --model_depth 50 --batch_size 128 --n_threads 4 --checkpoint 5
+--model resnet2p1d --model_depth 50 --batch_size 128 --n_threads 4 --checkpoint 5
 ```
 
 例如在我的服务器上为：
@@ -366,7 +381,7 @@ python main.py --root_path ~/data --video_path hmdb51_videos/jpg --annotation_pa
 python main.py --root_path /home/sunzheng/Video_Classification/data_hmdb --video_path hmdb51_videos/jpg --annotation_path hmdb51_1.json
 --result_path results_finetune_r2p1d --dataset hmdb51 --n_classes 51 --n_pretrain_classes 700
 --pretrain_path models/r2p1d50_K_200ep.pth --ft_begin_module fc
---model resnet --model_depth 50 --batch_size 32 --n_threads 4 --checkpoint 5
+--model resnet2p1d --model_depth 50 --batch_size 32 --n_threads 4 --checkpoint 5
 ```
 
 
@@ -378,7 +393,7 @@ python main.py --root_path /home/sunzheng/Video_Classification/data_hmdb --video
 ```shell
 python main.py --root_path ~/data --video_path kinetics_videos/jpg --annotation_path kinetics.json \
 --result_path results --dataset kinetics --resume_path results/save_200.pth \
---model_depth 50 --n_classes 700 --n_threads 4 --no_train --no_val --inference --output_topk 5 --inference_batch_size 1
+--model_depth 50 --n_classes 700 --n_threads 4 --no_train --no_val --inference --output_topk 5 --inference_batch_size 1 --model resnet2p1d
 ```
 
 例如在我的服务器上为：
@@ -386,7 +401,7 @@ python main.py --root_path ~/data --video_path kinetics_videos/jpg --annotation_
 ```shell
 python main.py --root_path /home/sunzheng/Video_Classification/data_hmdb --video_path hmdb51_videos/jpg --annotation_path hmdb51_1.json \
 --result_path results_finetune_r2p1d --dataset hmdb51 --resume_path results_finetune_r2p1d/save_200.pth \
---model_depth 50 --n_classes 51 --n_threads 4 --no_train --no_val --inference --output_topk 5 --inference_batch_size 1
+--model_depth 50 --n_classes 51 --n_threads 4 --no_train --no_val --inference --output_topk 5 --inference_batch_size 1 --model resnet2p1d
 ```
 
 
@@ -406,15 +421,30 @@ python -m util_scripts.eval_accuracy /home/sunzheng/Video_Classification/data_hm
 k代表top-k的准确率，输出top-1，top-3，top-5结果：
 
 ```python
-
+load ground truth
+number of ground truth: 1530
+load result
+number of result: 1530
+calculate top-1 accuracy
+top-1 accuracy: 0.6581699346405229
 ```
 
 ```python
-
+load ground truth
+number of ground truth: 1530
+load result
+number of result: 1530
+calculate top-3 accuracy
+top-3 accuracy: 0.8522875816993464
 ```
 
 ```python
-
+load ground truth
+number of ground truth: 1530
+load result
+number of result: 1530
+calculate top-5 accuracy
+top-5 accuracy: 0.9117647058823529
 ```
 
 
