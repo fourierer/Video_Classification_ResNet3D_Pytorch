@@ -1,11 +1,7 @@
 # Video_Classification_ResNet3D_Pytorch
 Using ResNet3D to train on Kinetics form scratch or fine-tune on UCF-101(or others) with Kinetics pretrained model.
 
-
-
 此repo中前两部分的使用Kinetics上训练好的模型来微调UCF-101和HMDB-51的代码和模型来源于（https://github.com/kenshohara/3D-ResNets-PyTorch ） ，没有原创性；第三部分打架行为识别部分的前面数据预处理是根据打架数据集写的，后续的训练代码是ResNet3D中的。
-
-
 
 
 
