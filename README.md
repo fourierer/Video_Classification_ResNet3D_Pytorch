@@ -11,7 +11,7 @@ Using ResNet3D to train on Kinetics form scratch or fine-tune on UCF-101(or othe
 
 （1）pytorch1.1，cuda9.0，python3.7；（一定要python3.7以上，否则后续抽帧会有问题，涉及到一个subprocess的函数，3.7以下的版本中subprocess函数参数设置和3.7不一样）
 
-（2）ffmpeg：处理视频文件的库，将视频文件处理成帧；
+（2）ffmpeg：处理视频文件的库，将视频文件处理成帧；抽帧这一步使用的命令行的ffmpeg，python本身也有一个ffmpeg库，可以方便地获取一个视频的信息，包括时长，帧数以及帧率等等。
 
 想在python中安装ffmpeg库，输入指令：
 
