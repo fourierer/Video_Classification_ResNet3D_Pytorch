@@ -13,15 +13,19 @@ Using ResNet3D to train on Kinetics form scratch or fine-tune on UCF-101(or othe
 
 （2）ffmpeg：处理视频文件的库，将视频文件处理成帧；
 
-安装了anaconda的可以直接conda install安装：
+想在python中安装ffmpeg库，输入指令：
 
 ```shell
-conda install ffmpeg
+pip install ffmpeg-python
 ```
 
-否则就按照github上的提示安装。
+按照原repo上的提示安装的是命令行的ffmpeg，使用pip install ffmpeg-python才可以在python中安装ffmpeg库，此外下面的指令都不行（填坑）：
 
-
+```shell
+pip install ffmpeg
+conda install ffmpeg
+conda install ffmpeg-python
+```
 
 2.预训练模型下载和ucf-101数据集下载
 
@@ -480,6 +484,7 @@ ffmpeg test.mkv test.avi
 获取视频信息代码get_video_infomation.py：
 
 ```python
+import ffmpeg
 import sys
 import random
 import os
